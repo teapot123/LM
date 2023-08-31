@@ -9,17 +9,30 @@ import os
 import sys
 import time
 from typing import List
+import datasets
 
 from transformers import LlamaTokenizer
 from safety_utils import get_safety_checker
 from model_utils import load_model, load_peft_model, load_llama_from_config
 
+def preprocess_dataset(dataset, data_split):
+    if dataset == 'trivia_qa':
+        data = datasets.load_dataset(dataset,'rc.nocontext')[data_split]
+    return data
+
+
 def main(
     model_name,
+    num_generations_per_prompt: int=5,
+    dataset: str='trivia_qa',
+    data_split: str='train',
+    max_batch_size: int=6,
     peft_model: str=None,
-    quantization: bool=False,
+    quantization: bool=True,
     max_new_tokens =100, #The maximum numbers of tokens to generate
+    system_prompt_file: str=None,
     prompt_file: str=None,
+    output_file: str=None,
     seed: int=42, #seed value for reproducibility
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
     min_length: int=None, #The minimum length of the sequence to be generated, input prompt + min_new_tokens
@@ -36,17 +49,31 @@ def main(
     use_fast_kernels: bool = False, # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
     **kwargs
 ):
+    
+    if system_prompt_file is not None:
+        assert os.path.exists(
+            system_prompt_file
+        ), f"Provided Prompt file does not exist {system_prompt_file}"
+        with open(system_prompt_file, "r") as f:
+            system_prompt = ''.join(f.readlines())
+    
     if prompt_file is not None:
         assert os.path.exists(
             prompt_file
         ), f"Provided Prompt file does not exist {prompt_file}"
         with open(prompt_file, "r") as f:
-            user_prompt = "\n".join(f.readlines())
+            user_prompt = ''.join(f.readlines())
     elif not sys.stdin.isatty():
-        user_prompt = "\n".join(sys.stdin.readlines())
+        user_prompt = ''.join(sys.stdin.readlines())
     else:
         print("No user prompt provided. Exiting.")
         sys.exit(1)
+
+    input_question = preprocess_dataset(dataset, data_split)
+    input_data = [user_prompt + '\nQ: ' + x['question'] + '\nA:' for x in input_question]
+    input_data = [x for x in input_data for j in range(num_generations_per_prompt)]
+    print(input_data[0])
+    print(len(input_data))
     
     # Set the seeds for reproducibility
     torch.cuda.manual_seed(seed)
@@ -79,61 +106,69 @@ def main(
     )
     model.resize_token_embeddings(model.config.vocab_size + 1) 
     
-    safety_checker = get_safety_checker(enable_azure_content_safety,
-                                        enable_sensitive_topics,
-                                        enable_salesforce_content_safety,
-                                        )
-
-    # Safety check of the user prompt
-    safety_results = [check(user_prompt) for check in safety_checker]
-    are_safe = all([r[1] for r in safety_results])
-    if are_safe:
-        print("User prompt deemed safe.")
-        print(f"User prompt:\n{user_prompt}")
-    else:
-        print("User prompt deemed unsafe.")
-        for method, is_safe, report in safety_results:
-            if not is_safe:
-                print(method)
-                print(report)
-        print("Skipping the inference as the prompt is not safe.")
-        sys.exit(1)  # Exit the program with an error status
-        
-    batch = tokenizer(user_prompt, padding='max_length', truncation=True, max_length=max_padding_length, return_tensors="pt")
-
-    batch = {k: v.to("cuda") for k, v in batch.items()}
-    start = time.perf_counter()
-    with torch.no_grad():
-        outputs = model.generate(
-            **batch,
-            max_new_tokens=max_new_tokens,
-            do_sample=do_sample,
-            top_p=top_p,
-            temperature=temperature,
-            min_length=min_length,
-            use_cache=use_cache,
-            top_k=top_k,
-            repetition_penalty=repetition_penalty,
-            length_penalty=length_penalty,
-            **kwargs 
-        )
-    e2e_inference_time = (time.perf_counter()-start)*1000
-    print(f"the inference time is {e2e_inference_time} ms")
-    output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # input_data = input_data[0:10]
+    batch = [input_data[i:i+max_batch_size] for i in range(0, len(input_data), max_batch_size)]
+    batches = [tokenizer(x, padding='max_length', truncation=True, max_length=max_padding_length, return_tensors="pt") for x in batch]
     
-    # Safety check of the model output
-    safety_results = [check(output_text) for check in safety_checker]
-    are_safe = all([r[1] for r in safety_results])
-    if are_safe:
-        print("User input and model output deemed safe.")
-        print(f"Model output:\n{output_text}")
-    else:
-        print("Model output deemed unsafe.")
-        for method, is_safe, report in safety_results:
-            if not is_safe:
-                print(method)
-                print(report)
+    print(len(batches))
+    
+    if output_file != None: 
+        with open(output_file, 'w') as fout:
+            for i, batch in enumerate(batches):
+                batch = {k: v.to("cuda") for k, v in batch.items()}
+                start = time.perf_counter()
+                with torch.no_grad():
+                    outputs = model.generate(
+                        **batch,
+                        max_new_tokens=max_new_tokens,
+                        do_sample=do_sample,
+                        top_p=top_p,
+                        temperature=temperature,
+                        min_length=min_length,
+                        use_cache=use_cache,
+                        top_k=top_k,
+                        repetition_penalty=repetition_penalty,
+                        length_penalty=length_penalty,
+                        **kwargs 
+                    )
+                e2e_inference_time = (time.perf_counter()-start)*1000
+                print(f"the inference time is {e2e_inference_time} ms")
                 
+                for j, output in enumerate(outputs):
+                    ind = int((i * max_batch_size + j) / num_generations_per_prompt)
+                    question = input_question[ind]['question'] 
+                    output_text = tokenizer.decode(output, skip_special_tokens=True)
+                    generated_answer = output_text.split(question)[-1].strip().split('\n')[0].split('Q:')[0].split('A:')[-1].strip()
+                    # print(f"Question:\n{question}")
+                    # print(f"Model output:\n{output_text}")
+                    # print(f"generated_answer:\n{generated_answer}")
+                    # print('-----------')
+                    fout.write(question + '\t' + generated_answer + '\n')
+            
+    else:
+        for batch in batches:
+            batch = {k: v.to("cuda") for k, v in batch.items()}
+            start = time.perf_counter()
+            with torch.no_grad():
+                outputs = model.generate(
+                    **batch,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=do_sample,
+                    top_p=top_p,
+                    temperature=temperature,
+                    min_length=min_length,
+                    use_cache=use_cache,
+                    top_k=top_k,
+                    repetition_penalty=repetition_penalty,
+                    length_penalty=length_penalty,
+                    **kwargs 
+                )
+            e2e_inference_time = (time.perf_counter()-start)*1000
+            print(f"the inference time is {e2e_inference_time} ms")
+            output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+            print(f"Model output:\n{output_text}")
+   
 
 if __name__ == "__main__":
     fire.Fire(main)
