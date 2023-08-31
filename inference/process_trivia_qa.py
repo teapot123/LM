@@ -11,7 +11,7 @@ if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--select_data_num', type=int, default=1000)
-    parser.add_argument('--model_name', type=str, default='meta-llama/Llama-2-13b-hf')
+    parser.add_argument('--model_name', type=str, default='meta-llama/Llama-2-13b-chat-hf')
     parser.add_argument('--quantization', type=bool, default=True)
     parser.add_argument('--data_split', type=str)
     parser.add_argument('--down_sample', type=bool)
@@ -19,16 +19,20 @@ if __name__=="__main__":
     parser.add_argument('--data_dir', type=str, default=None)
     args = parser.parse_args()
 
-    model = LlamaForCausalLM.from_pretrained(args.model_name)
-    tokenizer = LlamaTokenizerFast.from_pretrained(args.model_name)
+    
 
     print('Preprocessing dataset')
     if args.down_sample:
         val_data = datasets.load_dataset("trivia_qa", "rc.nocontext", split=args.data_split)
+        print('finish loading!')
         val_data = val_data.shuffle(seed=42)
+        print('finish shuffling!')
         val_data = val_data.flatten_indices()
+        print('finish flatten indices!')
         val_data.select(range(0,args.select_data_num))
     else:
+        model = LlamaForCausalLM.from_pretrained(args.model_name)
+        tokenizer = LlamaTokenizerFast.from_pretrained(args.model_name)
         val_data = datasets.load_from_disk(args.data_dir)
         with open(args.user_prompt_file) as f:
             user_prompt = '\n'.join(f.readlines())
