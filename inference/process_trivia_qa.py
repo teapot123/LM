@@ -35,7 +35,7 @@ if __name__=="__main__":
         tokenizer = LlamaTokenizerFast.from_pretrained(args.model_name)
         val_data = datasets.load_from_disk(args.data_dir)
         with open(args.user_prompt_file) as f:
-            user_prompt = '\n'.join(f.readlines())
+            user_prompt = ''.join(f.readlines())
         # few_shot_prompt = 'This is a bot that correctly answers questions. \n'
         # for sample in data_for_few_shot_prompt:
         #     few_shot_prompt += 'Question: ' + sample['question'] + ' Answer: ' + sample['answer']['value'] + ' '
@@ -85,6 +85,6 @@ if __name__=="__main__":
             columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
             output_all_columns=True)
         user_prompt_style=args.user_prompt_file.split('/')[-1].split('.')[0]
-        val_data.save_to_disk(f'../data/trivia_qa/{args.data_split}_{args.select_data_num}_{user_prompt_style}')
+        val_data.save_to_disk(f'{args.data_dir}_{user_prompt_style}')
 
     
