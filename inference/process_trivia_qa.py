@@ -14,7 +14,7 @@ if __name__=="__main__":
     parser.add_argument('--model_name', type=str, default='meta-llama/Llama-2-13b-chat-hf')
     parser.add_argument('--quantization', type=bool, default=True)
     parser.add_argument('--data_split', type=str)
-    parser.add_argument('--down_sample', type=bool)
+    parser.add_argument('--down_sample', type=bool, default=False)
     parser.add_argument('--user_prompt_file', type=str, default=None)
     parser.add_argument('--data_dir', type=str, default=None)
     args = parser.parse_args()
@@ -29,7 +29,7 @@ if __name__=="__main__":
         print('finish shuffling!')
         val_data = val_data.flatten_indices()
         print('finish flatten indices!')
-        val_data.select(range(0,args.select_data_num))
+        val_data = val_data.select(range(0,args.select_data_num))
     else:
         model = LlamaForCausalLM.from_pretrained(args.model_name)
         tokenizer = LlamaTokenizerFast.from_pretrained(args.model_name)
