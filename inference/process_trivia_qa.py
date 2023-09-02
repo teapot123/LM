@@ -33,6 +33,7 @@ if __name__=="__main__":
     else:
         model = LlamaForCausalLM.from_pretrained(args.model_name)
         tokenizer = LlamaTokenizerFast.from_pretrained(args.model_name)
+        tokenizer.add_special_tokens({"pad_token": "<PAD>",})
         val_data = datasets.load_from_disk(args.data_dir)
         with open(args.user_prompt_file) as f:
             user_prompt = ''.join(f.readlines())
@@ -53,13 +54,12 @@ if __name__=="__main__":
         
         # tokenize the inputs and labels
         batch_with_prompt = [user_prompt + question for question in batch["question"]]
-        inputs = tokenizer(batch_with_prompt, padding=False, truncation=False)
+        inputs = tokenizer(batch_with_prompt, padding=True, truncation=False)
         outputs = tokenizer(batch['answer'], padding=False, truncation=False)
         print(inputs)
 
         batch["input_ids"] = inputs.input_ids
         batch["attention_mask"] = inputs.attention_mask
-        batch["token_type_ids"] = inputs.token_type_ids
         batch["labels"] = outputs.input_ids.copy()
 
         # because BERT automatically shifts the labels, the labels correspond exactly to `decoder_input_ids`.
@@ -82,7 +82,7 @@ if __name__=="__main__":
                                 batch_size=batch_size,)
         val_data.set_format(
             type="torch",
-            columns=["input_ids", "attention_mask", "token_type_ids", "labels"],
+            columns=["input_ids", "attention_mask", "labels"],
             output_all_columns=True)
         user_prompt_style=args.user_prompt_file.split('/')[-1].split('.')[0]
         val_data.save_to_disk(f'{args.data_dir}_{user_prompt_style}')
