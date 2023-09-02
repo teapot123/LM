@@ -55,6 +55,7 @@ if __name__=="__main__":
         batch_with_prompt = [user_prompt + question for question in batch["question"]]
         inputs = tokenizer(batch_with_prompt, padding=False, truncation=False)
         outputs = tokenizer(batch['answer'], padding=False, truncation=False)
+        print(inputs)
 
         batch["input_ids"] = inputs.input_ids
         batch["attention_mask"] = inputs.attention_mask
