@@ -58,8 +58,7 @@ if __name__=="__main__":
 
         batch["input_ids"] = inputs.input_ids
         batch["attention_mask"] = inputs.attention_mask
-        batch["decoder_input_ids"] = outputs.input_ids
-        batch["decoder_attention_mask"] = outputs.attention_mask
+        batch["token_type_ids"] = inputs.token_type_ids
         batch["labels"] = outputs.input_ids.copy()
 
         # because BERT automatically shifts the labels, the labels correspond exactly to `decoder_input_ids`.
@@ -82,7 +81,7 @@ if __name__=="__main__":
                                 batch_size=batch_size,)
         val_data.set_format(
             type="torch",
-            columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
+            columns=["input_ids", "attention_mask", "token_type_ids", "labels"],
             output_all_columns=True)
         user_prompt_style=args.user_prompt_file.split('/')[-1].split('.')[0]
         val_data.save_to_disk(f'{args.data_dir}_{user_prompt_style}')

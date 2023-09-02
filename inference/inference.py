@@ -15,17 +15,25 @@ from transformers import LlamaTokenizer
 from safety_utils import get_safety_checker
 from model_utils import load_model, load_peft_model, load_llama_from_config
 
-def preprocess_dataset(dataset, data_split):
-    if dataset == 'trivia_qa':
-        data = datasets.load_dataset(dataset,'rc.nocontext')[data_split]
-    return data
+
+def combine_tensors_with_padding(tensor_list, padding_value=0):
+
+    # Get the maximum length of the tensors in the list.
+    max_len = max([tensor.size(0) for tensor in tensor_list])
+
+    # Pad each tensor in the list to the maximum length.
+    padded_tensor_list = [torch.nn.functional.pad(tensor, [0, max_len - tensor.size(0)], padding_value) for tensor in tensor_list]
+
+    # Concatenate the padded tensors along the first dimension.
+    combined_tensor = torch.cat(padded_tensor_list, dim=0)
+
+    return combined_tensor
 
 
 def main(
     model_name,
     num_generations_per_prompt: int=5,
-    dataset: str='trivia_qa',
-    data_split: str='train',
+    input_data: str=None,
     max_batch_size: int=6,
     peft_model: str=None,
     quantization: bool=True,
@@ -56,23 +64,10 @@ def main(
         ), f"Provided Prompt file does not exist {system_prompt_file}"
         with open(system_prompt_file, "r") as f:
             system_prompt = ''.join(f.readlines())
-    
-    if prompt_file is not None:
-        assert os.path.exists(
-            prompt_file
-        ), f"Provided Prompt file does not exist {prompt_file}"
-        with open(prompt_file, "r") as f:
-            user_prompt = ''.join(f.readlines())
-    elif not sys.stdin.isatty():
-        user_prompt = ''.join(sys.stdin.readlines())
-    else:
-        print("No user prompt provided. Exiting.")
-        sys.exit(1)
 
-    input_question = preprocess_dataset(dataset, data_split)
-    input_data = [user_prompt + '\nQ: ' + x['question'] + '\nA:' for x in input_question]
-    input_data = [x for x in input_data for j in range(num_generations_per_prompt)]
-    print(input_data[0])
+    input_data = datasets.load_from_disk(input_data)
+    # input_data = [x for x in input_data for j in range(num_generations_per_prompt)]
+    # print(input_data[0])
     print(len(input_data))
     
     # Set the seeds for reproducibility
@@ -100,16 +95,16 @@ def main(
     tokenizer = LlamaTokenizer.from_pretrained(model_name)
     tokenizer.add_special_tokens(
         {
-         
             "pad_token": "<PAD>",
         }
     )
     model.resize_token_embeddings(model.config.vocab_size + 1) 
     
     # input_data = input_data[0:10]
-    batch = [input_data[i:i+max_batch_size] for i in range(0, len(input_data), max_batch_size)]
-    batches = [tokenizer(x, padding='max_length', truncation=True, max_length=max_padding_length, return_tensors="pt") for x in batch]
-    
+    batches = [input_data[i:i+max_batch_size]['input_ids'] for i in range(0, len(input_data), max_batch_size)]
+    # batches = [tokenizer(x, padding='max_length', truncation=True, max_length=max_padding_length, return_tensors="pt") for x in batch]
+    batches = [combine_tensors_with_padding(x) for x in batches]
+
     print(len(batches))
     
     if output_file != None: 
