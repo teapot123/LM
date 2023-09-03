@@ -3,6 +3,7 @@
 
 from typing import List, Literal, Optional, Tuple, TypedDict, Union
 import json
+import torch
 
 Role = Literal["user", "assistant"]
 
@@ -62,3 +63,33 @@ def read_dialogs_from_file(file_path):
     with open(file_path, 'r') as file:
         dialogs = json.load(file)
     return dialogs
+
+
+def create_batches(input_ids_list, batch_size):
+    # Initialize lists to store the batches of input_ids and attention_masks
+    input_ids_batches = []
+    attention_mask_batches = []
+    
+    # Create batches
+    for i in range(0, len(input_ids_list), batch_size):
+        # Get the current batch of input_ids
+        input_ids_batch = input_ids_list[i:i+batch_size]
+        max_length = max(len(input_ids) for input_ids in input_ids_batch)
+        
+        # Pad the input_ids and create attention masks
+        padded_input_ids_batch = []
+        attention_mask_batch = []
+        for input_ids in input_ids_batch:
+            # Pad input_ids to max_length
+            padded_input_ids =  [0] * (max_length - len(input_ids)) + input_ids
+            # Create attention_mask
+            attention_mask =  [0] * (max_length - len(input_ids)) + [1] * len(input_ids)
+            # Append to the batch lists
+            padded_input_ids_batch.append(padded_input_ids)
+            attention_mask_batch.append(attention_mask)
+        
+        # Convert to tensors and append to the output lists
+        input_ids_batches.append(torch.tensor(padded_input_ids_batch))
+        attention_mask_batches.append(torch.tensor(attention_mask_batch))
+    
+    return input_ids_batches, attention_mask_batches

@@ -13,12 +13,13 @@ from peft import PeftModel, PeftConfig
 from transformers import LlamaConfig, LlamaTokenizer, LlamaForCausalLM
 from safety_utils import get_safety_checker
 from model_utils import load_model, load_peft_model
-from chat_utils import read_dialogs_from_file, format_tokens
+from chat_utils import read_dialogs_from_file, format_tokens, create_batches
 
 def main(
     model_name,
     peft_model: str=None,
     quantization: bool=False,
+    batch_size: int=4,
     max_new_tokens =256, #The maximum numbers of tokens to generate
     min_new_tokens:int=0, #The minimum numbers of tokens to generate
     prompt_file: str=None,
@@ -51,7 +52,7 @@ def main(
         print("No user prompt provided. Exiting.")
         sys.exit(1)
 
-    print(f"User dialogs:\n{dialogs}")
+    print(f"User dialog length:\n{len(dialogs)}")
     print("\n==================================\n")
 
 
@@ -82,28 +83,10 @@ def main(
     )
     
     chats = format_tokens(dialogs, tokenizer)
+    chat_batches = create_batches(chats, batch_size=4)
 
     with torch.no_grad():
-        for idx, chat in enumerate(chats):
-            safety_checker = get_safety_checker(enable_azure_content_safety,
-                                        enable_sensitive_topics,
-                                        enable_saleforce_content_safety,
-                                        )
-            # Safety check of the user prompt
-            safety_results = [check(dialogs[idx][0]["content"]) for check in safety_checker]
-            are_safe = all([r[1] for r in safety_results])
-            if are_safe:
-                print(f"User prompt deemed safe.")
-                print("User prompt:\n", dialogs[idx][0]["content"])
-                print("\n==================================\n")
-            else:
-                print("User prompt deemed unsafe.")
-                for method, is_safe, report in safety_results:
-                    if not is_safe:
-                        print(method)
-                        print(report)
-                print("Skipping the inferece as the prompt is not safe.")
-                sys.exit(1)  # Exit the program with an error status
+        for idx, chat in enumerate(chat_batches):
             tokens= torch.tensor(chat).long()
             tokens= tokens.unsqueeze(0)
             tokens= tokens.to("cuda:0")
@@ -119,23 +102,9 @@ def main(
                 length_penalty=length_penalty,
                 **kwargs
             )
-
-            output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-            # Safety check of the model output
-            safety_results = [check(output_text) for check in safety_checker]
-            are_safe = all([r[1] for r in safety_results])
-            if are_safe:
-                print("User input and model output deemed safe.")
+            for output in outputs:
+                output_text = tokenizer.decode(output, skip_special_tokens=True)
                 print(f"Model output:\n{output_text}")
-                print("\n==================================\n")
-
-            else:
-                print("Model output deemed unsafe.")
-                for method, is_safe, report in safety_results:
-                    if not is_safe:
-                        print(method)
-                        print(report)
 
 
 
