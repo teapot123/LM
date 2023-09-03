@@ -89,6 +89,7 @@ def main(
         for idx, chat in enumerate(chat_batches):
             tokens= torch.tensor(chat).long()
             tokens= tokens.unsqueeze(0)
+            print(tokens.size())
             tokens= tokens.to("cuda:0")
             outputs = model.generate(
                 tokens,
