@@ -76,7 +76,7 @@ if __name__=="__main__":
     def process_data_to_dialog_json(batch):
         
         # save as dialog json
-        batch = [[{"role": "system", "content": system_prompt},
+        batch['dialogs'] = [[{"role": "system", "content": system_prompt},
                               {"role": "user", "content": user_prompt + question}
                               ] for question in batch["question"]]
 
@@ -102,6 +102,8 @@ if __name__=="__main__":
         val_data_2 = val_data.map(process_data_to_dialog_json,
                                   batched = True,
                                   batch_size=batch_size)
+        val_data_2 = val_data_2['dialogs']
+        print(val_data_2)
         val_data_2.to_json(f'{args.data_dir}_{user_prompt_style}.json')
 
     
