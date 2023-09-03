@@ -91,7 +91,6 @@ def main(
             for idx, chat in enumerate(chat_batches):
                 attention_mask = attention_masks[idx]
                 tokens= torch.tensor(chat).long()
-                tokens= tokens.unsqueeze(0)
                 tokens= tokens.to("cuda:0")
                 attention_mask= attention_mask.to("cuda:0")
                 outputs = model.generate(
