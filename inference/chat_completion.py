@@ -89,6 +89,8 @@ def main(
     with open(output_file, 'w') as fout:
         with torch.no_grad():
             for idx, chat in enumerate(chat_batches):
+                if idx % 10 == 0:
+                    print(idx)
                 attention_mask = attention_masks[idx]
                 tokens= torch.tensor(chat).long()
                 tokens= tokens.to("cuda:0")
@@ -111,8 +113,8 @@ def main(
                     answer_conf = output_text.split('[/INST]')[1]
                     answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
                     conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
-                    print(f"{question}\t{answer}\t{conf}\n")
-                    fout.write(output_text)
+                    # print(f"{question}\t{answer}\t{conf}\n")
+                    fout.write(f"{question}\t{answer}\t{conf}\n")
 
 
 
