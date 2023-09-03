@@ -37,6 +37,7 @@ def main(
     use_fast_kernels: bool = False, # Enable using SDPA from PyTroch Accelerated Transformers, make use Flash Attention and Xformer memory-efficient kernels
     **kwargs
 ):
+
     if prompt_file is not None:
         assert os.path.exists(
             prompt_file

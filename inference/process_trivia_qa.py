@@ -16,6 +16,7 @@ if __name__=="__main__":
     parser.add_argument('--data_split', type=str)
     parser.add_argument('--down_sample', type=bool, default=False)
     parser.add_argument('--user_prompt_file', type=str, default=None)
+    parser.add_argument('--system_prompt_file', type=str, default=None)
     parser.add_argument('--data_dir', type=str, default=None)
     args = parser.parse_args()
 
@@ -35,6 +36,8 @@ if __name__=="__main__":
         tokenizer = LlamaTokenizerFast.from_pretrained(args.model_name)
         tokenizer.add_special_tokens({"pad_token": "<PAD>",})
         val_data = datasets.load_from_disk(args.data_dir)
+        with open(args.system_prompt_file) as f:
+            system_prompt = ''.join(f.readlines()).strip()
         with open(args.user_prompt_file) as f:
             user_prompt = ''.join(f.readlines())
         # few_shot_prompt = 'This is a bot that correctly answers questions. \n'
@@ -69,6 +72,15 @@ if __name__=="__main__":
         ]
 
         return batch
+    
+    def process_data_to_dialog_json(batch):
+        
+        # save as dialog json
+        batch = [[{"role": "system", "content": system_prompt},
+                              {"role": "user", "content": user_prompt + question}
+                              ] for question in batch["question"]]
+
+        return batch
 
     if args.down_sample:
         val_data = val_data.map(down_sample_data,
@@ -77,14 +89,19 @@ if __name__=="__main__":
                                 remove_columns=["search_results", "question_source", "entity_pages"])
         val_data.save_to_disk(f'../data/trivia_qa/{args.data_split}_{args.select_data_num}')
     else:
-        val_data = val_data.map(process_data_to_model_inputs,
+        val_data_1 = val_data.map(process_data_to_model_inputs,
                                 batched=True,
                                 batch_size=batch_size,)
-        val_data.set_format(
+        val_data_1.set_format(
             type="torch",
             columns=["input_ids", "attention_mask", "labels"],
             output_all_columns=True)
         user_prompt_style=args.user_prompt_file.split('/')[-1].split('.')[0]
-        val_data.save_to_disk(f'{args.data_dir}_{user_prompt_style}')
+        val_data_1.save_to_disk(f'{args.data_dir}_{user_prompt_style}')
+
+        val_data_2 = val_data.map(process_data_to_dialog_json,
+                                  batched = True,
+                                  batch_size=batch_size)
+        val_data_2.to_json(f'{args.data_dir}_{user_prompt_style}.json')
 
     

@@ -15,21 +15,6 @@ from transformers import LlamaTokenizer
 from safety_utils import get_safety_checker
 from model_utils import load_model, load_peft_model, load_llama_from_config
 
-
-def combine_tensors_with_padding(tensor_list, padding_value=0):
-
-    # Get the maximum length of the tensors in the list.
-    max_len = max([tensor.size(0) for tensor in tensor_list])
-
-    # Pad each tensor in the list to the maximum length.
-    padded_tensor_list = [torch.nn.functional.pad(tensor, [0, max_len - tensor.size(0)], padding_value) for tensor in tensor_list]
-
-    # Concatenate the padded tensors along the first dimension.
-    combined_tensor = torch.cat(padded_tensor_list, dim=0)
-
-    return combined_tensor
-
-
 def main(
     model_name,
     num_generations_per_prompt: int=5,
@@ -109,6 +94,7 @@ def main(
     
     batch = batches[0]
     print(batch)
+
     batch = {k: v.to("cuda") for k, v in batch.items() if torch.is_tensor(v)}
     start = time.perf_counter()
     with torch.no_grad():
@@ -127,9 +113,10 @@ def main(
         )
     e2e_inference_time = (time.perf_counter()-start)*1000
     print(f"the inference time is {e2e_inference_time} ms")
-    print(outputs)
-    output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    print(f"Model output:\n{output_text}")
+    for output in outputs:
+        print(output)
+        output_text = tokenizer.decode(output, skip_special_tokens=True)
+        print(f"Model output:\n{output_text}")
 
     
     # if output_file != None: 
