@@ -8,6 +8,8 @@ import os
 import sys
 import warnings
 from typing import List
+from tqdm import tqdm
+
 
 from peft import PeftModel, PeftConfig
 from transformers import LlamaConfig, LlamaTokenizer, LlamaForCausalLM
@@ -88,9 +90,7 @@ def main(
 
     with open(output_file, 'w') as fout:
         with torch.no_grad():
-            for idx, chat in enumerate(chat_batches):
-                if idx % 10 == 0:
-                    print(idx)
+            for idx, chat in tqdm(enumerate(chat_batches)):
                 attention_mask = attention_masks[idx]
                 tokens= torch.tensor(chat).long()
                 tokens= tokens.to("cuda:0")
@@ -113,7 +113,7 @@ def main(
                     answer_conf = output_text.split('[/INST]')[1]
                     answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
                     conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
-                    # print(f"{question}\t{answer}\t{conf}\n")
+                    print(f"{output_text}\n")
                     fout.write(f"{question}\t{answer}\t{conf}\n")
 
 
