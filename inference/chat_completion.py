@@ -23,6 +23,7 @@ def main(
     max_new_tokens =256, #The maximum numbers of tokens to generate
     min_new_tokens:int=0, #The minimum numbers of tokens to generate
     prompt_file: str=None,
+    output_file: str=None,
     seed: int=42, #seed value for reproducibility
     safety_score_threshold: float=0.5,
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
@@ -85,29 +86,31 @@ def main(
     chats = format_tokens(dialogs, tokenizer)
     chat_batches, attention_masks = create_batches(chats, batch_size=4)
 
-    with torch.no_grad():
-        for idx, chat in enumerate(chat_batches):
-            attention_mask = attention_masks[idx]
-            tokens= torch.tensor(chat).long()
-            tokens= tokens.unsqueeze(0)
-            tokens= tokens.to("cuda:0")
-            attention_mask= attention_mask.to("cuda:0")
-            outputs = model.generate(
-                tokens,
-                attention_masks=attention_mask,
-                max_new_tokens=max_new_tokens,
-                do_sample=do_sample,
-                top_p=top_p,
-                temperature=temperature,
-                use_cache=use_cache,
-                top_k=top_k,
-                repetition_penalty=repetition_penalty,
-                length_penalty=length_penalty,
-                **kwargs
-            )
-            for output in outputs:
-                output_text = tokenizer.decode(output, skip_special_tokens=True)
-                print(f"Model output:\n{output_text}")
+    with open(output_file, 'w') as fout:
+        with torch.no_grad():
+            for idx, chat in enumerate(chat_batches):
+                attention_mask = attention_masks[idx]
+                tokens= torch.tensor(chat).long()
+                tokens= tokens.unsqueeze(0)
+                tokens= tokens.to("cuda:0")
+                attention_mask= attention_mask.to("cuda:0")
+                outputs = model.generate(
+                    tokens,
+                    attention_masks=attention_mask,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=do_sample,
+                    top_p=top_p,
+                    temperature=temperature,
+                    use_cache=use_cache,
+                    top_k=top_k,
+                    repetition_penalty=repetition_penalty,
+                    length_penalty=length_penalty,
+                    **kwargs
+                )
+                for output in outputs:
+                    output_text = tokenizer.decode(output, skip_special_tokens=True)
+                    print(f"Model output:\n{output_text}")
+                    fout.write(output_text)
 
 
 
