@@ -107,7 +107,11 @@ def main(
                 )
                 for output in outputs:
                     output_text = tokenizer.decode(output, skip_special_tokens=True)
-                    print(f"Model output:\n{output_text}")
+                    question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
+                    answer_conf = output_text.split('[/INST]')[1]
+                    answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
+                    conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
+                    print(f"{question}\t{answer}\t{conf}\n")
                     fout.write(output_text)
 
 
