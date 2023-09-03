@@ -54,7 +54,7 @@ if __name__=="__main__":
         
         # tokenize the inputs and labels
         batch_with_prompt = [user_prompt + question for question in batch["question"]]
-        inputs = tokenizer(batch_with_prompt, padding=True, truncation=False)
+        inputs = tokenizer(batch_with_prompt, padding=True, return_tensors="pt")
         outputs = tokenizer(batch['answer'], padding=False, truncation=False)
         print(inputs)
 
