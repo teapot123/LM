@@ -1,7 +1,11 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
-from typing import List, Literal, Optional, Tuple, TypedDict, Union
+from typing import List, Optional, Tuple, Union
+try:
+    from typing import Literal, TypedDict
+except ImportError:
+    from typing_extensions import Literal, TypedDict
 import json
 import torch
 
