@@ -1,6 +1,7 @@
 import argparse
 import pathlib
 import pickle
+import json
 
 import datasets
 import torch
@@ -103,7 +104,7 @@ if __name__=="__main__":
                                   batched = True,
                                   batch_size=batch_size)
         val_data_2 = val_data_2['dialogs']
-        print(val_data_2)
-        val_data_2.to_json(f'{args.data_dir}_{user_prompt_style}.json')
+        with open(f'{args.data_dir}_{user_prompt_style}.json', 'w') as fout:
+            fout.write(json.dumps(val_data_2, indent = 4))
 
     
