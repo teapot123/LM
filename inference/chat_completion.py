@@ -96,7 +96,6 @@ def main(
                 attention_mask= attention_mask.to("cuda:0")
                 outputs = model.generate(
                     tokens,
-                    attention_masks=attention_mask,
                     max_new_tokens=max_new_tokens,
                     do_sample=do_sample,
                     top_p=top_p,
