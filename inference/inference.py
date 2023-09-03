@@ -101,68 +101,93 @@ def main(
     model.resize_token_embeddings(model.config.vocab_size + 1) 
     
     # input_data = input_data[0:10]
-    batches = [input_data[i:i+max_batch_size]['input_ids'] for i in range(0, len(input_data), max_batch_size)]
+    batches = [input_data[i:i+max_batch_size] for i in range(0, len(input_data), max_batch_size)]
     # batches = [tokenizer(x, padding='max_length', truncation=True, max_length=max_padding_length, return_tensors="pt") for x in batch]
-    batches = [combine_tensors_with_padding(x) for x in batches]
+    # batches = [combine_tensors_with_padding(x) for x in batches]
 
     print(len(batches))
     
-    if output_file != None: 
-        with open(output_file, 'w') as fout:
-            for i, batch in enumerate(batches):
-                batch = {k: v.to("cuda") for k, v in batch.items()}
-                start = time.perf_counter()
-                with torch.no_grad():
-                    outputs = model.generate(
-                        **batch,
-                        max_new_tokens=max_new_tokens,
-                        do_sample=do_sample,
-                        top_p=top_p,
-                        temperature=temperature,
-                        min_length=min_length,
-                        use_cache=use_cache,
-                        top_k=top_k,
-                        repetition_penalty=repetition_penalty,
-                        length_penalty=length_penalty,
-                        **kwargs 
-                    )
-                e2e_inference_time = (time.perf_counter()-start)*1000
-                print(f"the inference time is {e2e_inference_time} ms")
-                
-                for j, output in enumerate(outputs):
-                    ind = int((i * max_batch_size + j) / num_generations_per_prompt)
-                    question = input_question[ind]['question'] 
-                    output_text = tokenizer.decode(output, skip_special_tokens=True)
-                    generated_answer = output_text.split(question)[-1].strip().split('\n')[0].split('Q:')[0].split('A:')[-1].strip()
-                    # print(f"Question:\n{question}")
-                    # print(f"Model output:\n{output_text}")
-                    # print(f"generated_answer:\n{generated_answer}")
-                    # print('-----------')
-                    fout.write(question + '\t' + generated_answer + '\n')
-            
-    else:
-        for batch in batches:
-            batch = {k: v.to("cuda") for k, v in batch.items()}
-            start = time.perf_counter()
-            with torch.no_grad():
-                outputs = model.generate(
-                    **batch,
-                    max_new_tokens=max_new_tokens,
-                    do_sample=do_sample,
-                    top_p=top_p,
-                    temperature=temperature,
-                    min_length=min_length,
-                    use_cache=use_cache,
-                    top_k=top_k,
-                    repetition_penalty=repetition_penalty,
-                    length_penalty=length_penalty,
-                    **kwargs 
-                )
-            e2e_inference_time = (time.perf_counter()-start)*1000
-            print(f"the inference time is {e2e_inference_time} ms")
-            output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    batch = batches[0]
+    print(batch)
+    batch = {k: v.to("cuda") for k, v in batch.items()}
+    start = time.perf_counter()
+    with torch.no_grad():
+        outputs = model.generate(
+            **batch,
+            max_new_tokens=max_new_tokens,
+            do_sample=do_sample,
+            top_p=top_p,
+            temperature=temperature,
+            min_length=min_length,
+            use_cache=use_cache,
+            top_k=top_k,
+            repetition_penalty=repetition_penalty,
+            length_penalty=length_penalty,
+            **kwargs 
+        )
+    e2e_inference_time = (time.perf_counter()-start)*1000
+    print(f"the inference time is {e2e_inference_time} ms")
+    print(outputs)
+    output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(f"Model output:\n{output_text}")
 
-            print(f"Model output:\n{output_text}")
+    
+    # if output_file != None: 
+    #     with open(output_file, 'w') as fout:
+    #         for i, batch in enumerate(batches):
+    #             batch = {k: v.to("cuda") for k, v in batch.items()}
+    #             start = time.perf_counter()
+    #             with torch.no_grad():
+    #                 outputs = model.generate(
+    #                     **batch,
+    #                     max_new_tokens=max_new_tokens,
+    #                     do_sample=do_sample,
+    #                     top_p=top_p,
+    #                     temperature=temperature,
+    #                     min_length=min_length,
+    #                     use_cache=use_cache,
+    #                     top_k=top_k,
+    #                     repetition_penalty=repetition_penalty,
+    #                     length_penalty=length_penalty,
+    #                     **kwargs 
+    #                 )
+    #             e2e_inference_time = (time.perf_counter()-start)*1000
+    #             print(f"the inference time is {e2e_inference_time} ms")
+                
+    #             for j, output in enumerate(outputs):
+    #                 ind = int((i * max_batch_size + j) / num_generations_per_prompt)
+    #                 question = input_data[ind]['question'] 
+    #                 output_text = tokenizer.decode(output, skip_special_tokens=True)
+    #                 generated_answer = output_text.split(question)[-1].strip().split('\n')[0].split('Q:')[0].split('A:')[-1].strip()
+    #                 # print(f"Question:\n{question}")
+    #                 # print(f"Model output:\n{output_text}")
+    #                 # print(f"generated_answer:\n{generated_answer}")
+    #                 # print('-----------')
+    #                 fout.write(question + '\t' + generated_answer + '\n')
+            
+    # else:
+    #     for batch in batches:
+    #         batch = {k: v.to("cuda") for k, v in batch.items()}
+    #         start = time.perf_counter()
+    #         with torch.no_grad():
+    #             outputs = model.generate(
+    #                 **batch,
+    #                 max_new_tokens=max_new_tokens,
+    #                 do_sample=do_sample,
+    #                 top_p=top_p,
+    #                 temperature=temperature,
+    #                 min_length=min_length,
+    #                 use_cache=use_cache,
+    #                 top_k=top_k,
+    #                 repetition_penalty=repetition_penalty,
+    #                 length_penalty=length_penalty,
+    #                 **kwargs 
+    #             )
+    #         e2e_inference_time = (time.perf_counter()-start)*1000
+    #         print(f"the inference time is {e2e_inference_time} ms")
+    #         output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    #         print(f"Model output:\n{output_text}")
    
 
 if __name__ == "__main__":
