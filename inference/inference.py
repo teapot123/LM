@@ -109,7 +109,7 @@ def main(
     
     batch = batches[0]
     print(batch)
-    batch = {k: v.to("cuda") for k, v in batch.items()}
+    batch = {k: v.to("cuda") for k, v in batch.items() if torch.is_tensor(v)}
     start = time.perf_counter()
     with torch.no_grad():
         outputs = model.generate(
