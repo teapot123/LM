@@ -83,16 +83,18 @@ def main(
     )
     
     chats = format_tokens(dialogs, tokenizer)
-    chat_batches = create_batches(chats, batch_size=4)
+    chat_batches, attention_masks = create_batches(chats, batch_size=4)
 
     with torch.no_grad():
         for idx, chat in enumerate(chat_batches):
+            attention_mask = attention_masks[idx]
             tokens= torch.tensor(chat).long()
             tokens= tokens.unsqueeze(0)
-            print(tokens.size())
             tokens= tokens.to("cuda:0")
+            attention_mask= attention_mask.to("cuda:0")
             outputs = model.generate(
                 tokens,
+                attention_masks=attention_mask,
                 max_new_tokens=max_new_tokens,
                 do_sample=do_sample,
                 top_p=top_p,
