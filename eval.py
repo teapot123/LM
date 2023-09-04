@@ -53,8 +53,8 @@ def eval_word_match(res_data, gt_data, bin_num):
             conf_list[conf_index]['correct'] += 1
         else:
             pass
-            print(f'Question: {question}')
-            print(f'Incorrect answer: {res}  Ground Truth: {gt}')
+            # print(f'Question: {question}')
+            # print(f'Incorrect answer: {res}  Ground Truth: {gt}')
         total += 1
         conf_list[conf_index]['conf'] += conf
         conf_list[conf_index]['total'] += 1
