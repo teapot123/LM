@@ -1,10 +1,12 @@
 import argparse
 import datasets
 
-def read_res_file(filename):
+def read_res_file(filename, first_num):
     res_dict = {}
     with open(filename) as f:
-        for line in f:
+        for i, line in enumerate(f):
+            if first_num != None and i >= first_num:
+                continue
             tmp = line.split('\t')
             if len(tmp) != 3:
                 continue
@@ -73,8 +75,9 @@ if __name__=="__main__":
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--res_file', type=str)
     parser.add_argument('--bin', type=int, default=20)
+    parser.add_argument('--first_num', type=int, default=None)
     args = parser.parse_args()
-    res_data = read_res_file(args.res_file)
+    res_data = read_res_file(args.res_file, args.first_num)
 
     if args.dataset == 'trivia_qa':
         gt_data = read_dataset('data/trivia_qa/validation_1000')
