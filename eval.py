@@ -9,6 +9,7 @@ def read_res_file(filename, first_num):
                 continue
             tmp = line.split('\t')
             if len(tmp) != 3:
+                print(f'no valid answers: {line}')
                 continue
             question = tmp[0].strip()
             answer = tmp[1].strip()
