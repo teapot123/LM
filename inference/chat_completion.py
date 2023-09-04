@@ -86,7 +86,7 @@ def main(
     )
     
     chats = format_tokens(dialogs, tokenizer)
-    chat_batches, attention_masks = create_batches(chats, batch_size=4)
+    chat_batches, attention_masks = create_batches(chats, batch_size=batch_size)
 
     with open(output_file, 'w') as fout:
         with torch.no_grad():
@@ -97,6 +97,7 @@ def main(
                 attention_mask= attention_mask.to("cuda:0")
                 outputs = model.generate(
                     tokens,
+                    attention_mask=attention_mask,
                     max_new_tokens=max_new_tokens,
                     do_sample=do_sample,
                     top_p=top_p,
