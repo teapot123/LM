@@ -86,4 +86,5 @@ if __name__=="__main__":
 
     if args.dataset == 'trivia_qa':
         gt_data = read_dataset('data/trivia_qa/validation_1000')
+        print(f'ground truth num: {len(gt_data)}')
         eval_word_match(res_data, gt_data, args.bin)
