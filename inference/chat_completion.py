@@ -115,10 +115,13 @@ def main(
                     print(f"{output_text}\n")
                     question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
                     answer_conf = output_text.split('[/INST]')[1]
-                    answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
-                    conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
-                    fout.write(f"{question}\t{answer}\t{conf}\n")
-
+                    try:
+                        answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
+                        conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
+                        fout.write(f"{question}\t{answer}\t{conf}\n")
+                    except IndexError:
+                        answer = answer_conf.replace('\n', ' ').strip()
+                        fout.write(f"{question}\t{answer}\n")
 
 
 if __name__ == "__main__":
