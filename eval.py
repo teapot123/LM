@@ -31,9 +31,9 @@ def read_dataset(filename):
     val_data = datasets.load_from_disk(filename)
     gt_dict = {}
     for data in val_data:
-        if data['question'] in gt_dict:
-            question = data['question']
-            print(f'repeat questions: {question}')
+        # if data['question'] in gt_dict:
+        #     question = data['question']
+        #     print(f'repeat questions: {question}')
         gt_dict[data['question']] = data['answer']
     return gt_dict
 
