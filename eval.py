@@ -12,7 +12,11 @@ def read_res_file(filename):
             answer = tmp[1].strip()
             conf = tmp[2].strip()
             try:
-                conf = eval(conf) if ' ' in conf else eval(conf.split(' ')[0])
+                if conf[-1] == '.':
+                    conf = conf[:-1]
+                if ' ' in conf:
+                    conf = conf.split(' ')[0]
+                conf = eval(conf)
             except SyntaxError:
                 print(f"Cannot parse confidence: {conf}")
                 continue
