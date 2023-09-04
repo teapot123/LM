@@ -29,6 +29,9 @@ def read_res_file(filename, first_num):
             except NameError:
                 print(f"Cannot parse confidence: {conf}")
                 continue
+            except TypeError:
+                print(f"Cannot parse confidence: {conf}")
+                continue
             res_dict[question] = [answer, conf]
 
     return res_dict
