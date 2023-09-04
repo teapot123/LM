@@ -88,9 +88,11 @@ def main(
     chats = format_tokens(dialogs, tokenizer)
     chat_batches, attention_masks = create_batches(chats, batch_size=batch_size)
 
-    with open(output_file, 'w') as fout:
+    with open(output_file, 'a') as fout:
         with torch.no_grad():
             for idx, chat in tqdm(enumerate(chat_batches), total=len(chat_batches)):
+                if idx < 103:
+                    continue
                 attention_mask = attention_masks[idx]
                 tokens= torch.tensor(chat).long()
                 tokens= tokens.to("cuda:0")
@@ -109,12 +111,12 @@ def main(
                     **kwargs
                 )
                 for output in outputs:
+                    print(f"{output_text}\n")
                     output_text = tokenizer.decode(output, skip_special_tokens=True)
                     question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
                     answer_conf = output_text.split('[/INST]')[1]
                     answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
                     conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
-                    print(f"{output_text}\n")
                     fout.write(f"{question}\t{answer}\t{conf}\n")
 
 
