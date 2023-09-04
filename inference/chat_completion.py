@@ -111,8 +111,8 @@ def main(
                     **kwargs
                 )
                 for output in outputs:
-                    print(f"{output_text}\n")
                     output_text = tokenizer.decode(output, skip_special_tokens=True)
+                    print(f"{output_text}\n")
                     question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
                     answer_conf = output_text.split('[/INST]')[1]
                     answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
