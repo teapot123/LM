@@ -46,7 +46,9 @@ def eval_word_match(res_data, gt_data, bin_num):
         conf_index = int(conf * bin_num)
         if conf_index == bin_num:
             conf_index = bin_num - 1
-        if gt.lower() == res.lower():
+        # exact word match
+        gt_list = list(set([g.lower() for g in gt]))
+        if res in gt_list:
             correct += 1
             conf_list[conf_index]['correct'] += 1
         else:
