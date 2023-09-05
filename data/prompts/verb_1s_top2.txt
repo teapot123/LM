@@ -1,0 +1,11 @@
+Provide your 2 best guesses and the probability that each is correct (0.0 to 1.0) for the following question. Give ONLY the guesses and probabilities, no other words or explanation. For example:
+
+G1: <1st most likely guess, as short as possible; not a complete sentence, just the guess!>
+
+P1: <the probability between 0.0 and 1.0 that G1 is correct, without any extra commentary whatsoever; just the probability!>
+
+G2: <2nd most likely guess, as short as possible; not a complete sentence, just the guess!>
+
+P2: <the probability between 0.0 and 1.0 that G2 is correct, without any extra commentary whatsoever; just the probability!>
+
+The question is: 
