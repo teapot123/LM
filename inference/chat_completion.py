@@ -91,8 +91,6 @@ def main(
     with open(output_file, 'a') as fout:
         with torch.no_grad():
             for idx, chat in tqdm(enumerate(chat_batches), total=len(chat_batches)):
-                if idx < 103:
-                    continue
                 attention_mask = attention_masks[idx]
                 tokens= torch.tensor(chat).long()
                 tokens= tokens.to("cuda:0")
