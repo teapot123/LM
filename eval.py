@@ -85,7 +85,7 @@ def eval_word_match(res_data, gt_data, bin_num):
     total = 0
     for question in gt_data:
         if question not in res_data:
-            print(f'question not in results: {question}')
+            # print(f'question not in results: {question}')
             continue
         gt = gt_data[question]
         answers, confs = res_data[question]
