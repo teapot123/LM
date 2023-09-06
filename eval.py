@@ -41,7 +41,8 @@ def read_res_file(filename, first_num):
                     confs.append(conf)
             else:
                 ind = 1
-                for t in tmp:
+                question = tmp[0].strip()
+                for t in tmp[1:]:
                     if len(t.strip()) == 0:
                         continue
                     if f'G{ind}' in t:
