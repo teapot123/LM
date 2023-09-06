@@ -48,10 +48,14 @@ def read_res_file(filename, first_num):
                         continue
                     if f'G{ind}' in t:
                         tok = f'G{ind}:'
-                        answer = t.split(tok)[1].strip().split('(')[0].strip()    
+                        answer = t.split(tok)[1]
+                        next_tok = f'P{ind}:'
+                        answer = answer.split(next_tok)[0].strip().split('(')[0].strip()    
                     if f'P{ind}' in t:
                         tok = f'P{ind}:'
-                        conf = t.split(tok)[1].strip().split('(')[0].split(')')[0].strip()
+                        next_tok = f'G{ind+1}:'
+                        conf = t.split(tok)[1]
+                        conf = conf.split(next_tok)[0].strip().split('(')[0].split(')')[0].strip()
                         conf = parse_conf(conf)
                         if conf != None:
                             answers.append(answer)
