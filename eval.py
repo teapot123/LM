@@ -42,7 +42,7 @@ def read_res_file(filename, first_num):
             else:
                 ind = 1
                 question = tmp[0].strip()
-                print('\t'.join(tmp[1:]))
+                # print('\t'.join(tmp[1:]))
                 for t in tmp[1:]:
                     if len(t.strip()) == 0:
                         continue
@@ -60,7 +60,7 @@ def read_res_file(filename, first_num):
                         if conf != None:
                             answers.append(answer)
                             confs.append(conf)
-                            print(f"answer: {answer} conf: {conf}")
+                            # print(f"answer: {answer} conf: {conf}")
                         ind += 1
             if answers != []:
                 res_dict[question] = [answers, confs]
