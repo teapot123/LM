@@ -105,6 +105,7 @@ def eval_word_match(res_data, gt_data, bin_num):
             total += 1
             conf_list[conf_index]['conf'] += conf
             conf_list[conf_index]['total'] += 1
+            break
     ece = 0
     for i, bin in enumerate(conf_list):
         if bin['total'] == 0:
