@@ -3,10 +3,13 @@ import datasets
 
 def parse_conf(conf):
     try:
+        conf = conf.replace('(', '').replace(')', '').replace(',','')
         if ' ' in conf:
             conf = conf.split(' ')[0]
         if conf[-1] == '.':
             conf = conf[:-1]
+        if conf[-1] == '%':
+            conf = conf[:-1] + '/100'
         conf = eval(conf)
     except SyntaxError:
         print(f"Cannot parse confidence: {conf}")
@@ -80,9 +83,10 @@ def read_dataset(filename):
     return gt_dict
 
 def eval_word_match(res_data, gt_data, bin_num):
-    conf_list = [{'correct':0, 'total':0, 'conf':0} for x in range(bin_num)]
-    correct = 0
-    total = 0
+    res_dict = {}
+    last_question = ''
+    i = 0
+
     for question in gt_data:
         if question not in res_data:
             # print(f'question not in results: {question}')
@@ -90,34 +94,39 @@ def eval_word_match(res_data, gt_data, bin_num):
         gt = gt_data[question]
         answers, confs = res_data[question]
         for (res, conf) in zip(answers, confs):
-            conf_index = int(conf * bin_num)
-            if conf_index == bin_num:
-                conf_index = bin_num - 1
             # exact word match
             gt_list = list(set([g.lower() for g in gt]))
+            res_dict[question] = {}
             if res.lower() in gt_list:
-                correct += 1
-                conf_list[conf_index]['correct'] += 1
+                res_dict[question]['correct'] = 1
+                # print(f'Correct answer: {res}  Ground Truth: {gt}')
             else:
-                pass
+                res_dict[question]['correct'] = 0
                 # print(f'Question: {question}')
                 # print(f'Incorrect answer: {res}  Ground Truth: {gt}')
-            total += 1
-            conf_list[conf_index]['conf'] += conf
-            conf_list[conf_index]['total'] += 1
+            res_dict[question]['conf'] = conf
             break
+
+    total = len(res_dict)
+    # print(res_dict)
+    correct = sum([res_dict[q]['correct'] for q in res_dict])
+
     ece = 0
-    for i, bin in enumerate(conf_list):
-        if bin['total'] == 0:
-            continue
-        else:
-            avg_acc = bin['correct']/bin['total']
-            avg_conf = bin['conf']/bin['total']
-            ece += bin['total'] * abs(avg_acc - avg_conf)
+    conf_list = sorted(res_dict.items(), key = lambda x:x[1]['conf'])
+    bin_weight = total / bin_num
+    for i in range(bin_num):
+        start_index, end_index = int(bin_weight * i), min(int(bin_weight * (i+1)), total - 1)
+        weight = end_index - start_index
+        bin_list = conf_list[start_index:end_index]
+        avg_acc = sum([x[1]['correct'] for x in bin_list]) / weight
+        avg_conf = sum([x[1]['conf'] for x in bin_list]) / weight
+        ece += weight * abs(avg_acc - avg_conf)
+        print(f"start: {start_index} {bin_list[0][1]['conf']} end: {end_index} {bin_list[-1][1]['conf']}")
+        print(f"avg conf: {avg_conf} avg acc: {avg_acc}")
     ece /= total
     
     print(f'acc: {correct/total} total: {total}')
-    print(f'conf list: {conf_list}')
+    # print(f'conf list: {res_dict}')
     print(f'ece: {ece}')
 
 
