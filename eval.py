@@ -34,10 +34,15 @@ def read_res_file(filename, first_num):
             tmp = line.split('\t')
             answers = []
             confs = []
-            if len(tmp) == 3:
+            if 'Guess:' in line and 'Probability:' in line:
                 question = tmp[0].strip()
-                answer = tmp[1].strip()
-                conf = tmp[2].strip()
+                for t in tmp[1:]:
+                    if len(t.strip()) == 0:
+                        continue
+                    if 'Guess:' in t:
+                        answer = t.split('Guess:')[1].strip()
+                    elif 'Probability:' in t:
+                        conf = t.split('Probability:')[1].strip()
                 conf = parse_conf(conf)
                 if conf != None:
                     answers.append(answer)
@@ -88,11 +93,20 @@ def eval_word_match(res_data, gt_data, bin_num):
     i = 0
 
     for question in gt_data:
-        if question not in res_data:
-            # print(f'question not in results: {question}')
-            continue
         gt = gt_data[question]
-        answers, confs = res_data[question]
+        if question not in res_data:
+            res_question = [x for x in res_data if question in x]
+            res_question = list(set(res_question))
+            if len(res_question) == 0:
+                print(f'question not in results: {question}')
+                continue
+            else:
+                answers, confs = res_data[res_question[0]] 
+            # else:
+            #     print(f'questions in results: {res_question}')
+            #     continue
+        else: 
+            answers, confs = res_data[question]
         for (res, conf) in zip(answers, confs):
             # exact word match
             gt_list = list(set([g.lower() for g in gt]))
@@ -110,9 +124,11 @@ def eval_word_match(res_data, gt_data, bin_num):
     total = len(res_dict)
     # print(res_dict)
     correct = sum([res_dict[q]['correct'] for q in res_dict])
+    # print(correct)
 
     ece = 0
     conf_list = sorted(res_dict.items(), key = lambda x:x[1]['conf'])
+    # print(conf_list)
     bin_weight = total / bin_num
     for i in range(bin_num):
         start_index, end_index = int(bin_weight * i), min(int(bin_weight * (i+1)), total - 1)

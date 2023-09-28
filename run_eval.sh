@@ -1,7 +1,7 @@
-TEMP=0.5
+TEMP=0.3
 
 python eval.py --dataset trivia_qa \
-    --res_file generated/trivia_qa/gen_val_1000_verb_1s_top2_${TEMP}.txt \
+    --res_file generated/trivia_qa/gen_val_1000_top1_w_rec_${TEMP}.txt \
     --bin 10
 
 

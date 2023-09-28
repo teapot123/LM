@@ -26,6 +26,7 @@ def main(
     min_new_tokens:int=0, #The minimum numbers of tokens to generate
     prompt_file: str=None,
     output_file: str=None,
+    mode: str='topk',
     seed: int=42, #seed value for reproducibility
     safety_score_threshold: float=0.5,
     do_sample: bool=True, #Whether or not to use sampling ; use greedy decoding otherwise.
@@ -88,7 +89,7 @@ def main(
     chats = format_tokens(dialogs, tokenizer)
     chat_batches, attention_masks = create_batches(chats, batch_size=batch_size)
 
-    with open(output_file, 'a') as fout:
+    with open(output_file, 'w') as fout:
         with torch.no_grad():
             for idx, chat in tqdm(enumerate(chat_batches), total=len(chat_batches)):
                 attention_mask = attention_masks[idx]
@@ -111,17 +112,25 @@ def main(
                 for output in outputs:
                     output_text = tokenizer.decode(output, skip_special_tokens=True)
                     print(f"{output_text}\n")
-                    question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
-                    answer_conf = output_text.split('[/INST]')[1]
-                    # try:
-                    #     answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
-                    #     conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
-                    #     fout.write(f"{question}\t{answer}\t{conf}\n")
-                    # except IndexError:
-                    #     answer = answer_conf.replace('\n', ' ').strip()
-                    #     fout.write(f"{question}\t{answer}\n")
-                    answer = answer_conf.replace('\n', '\t').strip()
-                    fout.write(f"{question}\t{answer}\n")
+                    if mode == 'topk':
+                        question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
+                        answer_conf = output_text.split('[/INST]')[1]
+                        # try:
+                        #     answer = answer_conf.split('Guess:')[1].split('\n')[0].split('Probability:')[0].strip()
+                        #     conf = answer_conf.split('Probability:')[1].split('\n')[0].strip()
+                        #     fout.write(f"{question}\t{answer}\t{conf}\n")
+                        # except IndexError:
+                        #     answer = answer_conf.replace('\n', ' ').strip()
+                        #     fout.write(f"{question}\t{answer}\n")
+                        answer = answer_conf.replace('\n', '\t').strip()
+                        fout.write(f"{question}\t{answer}\n")
+                    elif mode == 'generate_recitation':
+                        texts = output_text.split('[/INST]')[0].split('\n\nQuestion 6: ')[-1]
+                        question = texts.split('\n\n')[0].strip()
+                        answer = output_text.split('[/INST]')[1].split('\n\n')[1].replace('\n', '\t').strip()
+                        if answer[0] == '"' and answer[-1] == '"':
+                            answer = answer[1:-1]
+                        fout.write(f"{question}\t{answer}\n")
 
 
 
