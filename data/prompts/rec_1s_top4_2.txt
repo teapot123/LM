@@ -1,0 +1,27 @@
+Provide your 4 best guesses, 4 supporting paragraphs and 4 probabilities that each is correct (0.0 to 1.0) for the following question. Give ONLY the guesses, pragraphs, and probabilities, no other words or explanation. Strictly follow the format:
+
+G1: <1st most likely guess, as short as possible; not a complete sentence, just the guess!>
+
+G2: <2nd most likely guess, as short as possible; not a complete sentence, just the guess!>
+
+G3: <3rd most likely guess, as short as possible; not a complete sentence, just the guess!>
+
+G4: <4th most likely guess, as short as possible; not a complete sentence, just the guess!>
+
+T1: <a supporting Wikipedia page, section, or paragraph for the question that may contain G1.>
+
+T2: <a supporting Wikipedia page, section, or paragraph for the question that may contain G2.>
+
+T3: <a supporting Wikipedia page, section, or paragraph for the question that may contain G3.>
+
+T4: <a supporting Wikipedia page, section, or paragraph for the question that may contain G4.>
+
+P1: <the probability between 0.0 and 1.0 that G1 is correct, without any extra commentary whatsoever; just the probability!>
+
+P2: <the probability between 0.0 and 1.0 that G2 is correct, without any extra commentary whatsoever; just the probability!>
+
+P3: <the probability between 0.0 and 1.0 that G3 is correct, without any extra commentary whatsoever; just the probability!>
+
+P4: <the probability between 0.0 and 1.0 that G4 is correct, without any extra commentary whatsoever; just the probability!>
+
+The question is: 

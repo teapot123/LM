@@ -21,7 +21,7 @@ if __name__=="__main__":
     parser.add_argument('--data_dir', type=str, default=None)
     parser.add_argument('--out_dir', type=str, default=None)
     parser.add_argument('--mode', type=str, choices=[
-        'topk', 'generate_recitation', 'with_recitation',
+        'topk', 'generate_recitation', 'with_recitation', 'pure',
     ])
     args = parser.parse_args()
 
@@ -69,6 +69,14 @@ if __name__=="__main__":
         return batch
 
     
+    def process_pure_question_to_json(batch):
+        
+        # save as dialog json
+        batch['dialogs'] = [[{"role": "system", "content": system_prompt},
+                              {"role": "user", "content": question}
+                              ] for question in batch["question"]]
+        return batch
+    
     def process_data_to_dialog_json(batch):
         
         # save as dialog json
@@ -103,6 +111,12 @@ if __name__=="__main__":
                                 remove_columns=["search_results", "question_source", "entity_pages"])
         val_data.save_to_disk(f'../data/trivia_qa/{args.data_split}_{args.select_data_num}')
     else:
+        if args.mode == 'pure':
+            user_prompt_style='pure_q'
+            val_data_2 = val_data.map(process_pure_question_to_json,
+                                    batched = True,
+                                    batch_size=batch_size)
+            val_data_2 = val_data_2['dialogs']
         if args.mode == 'topk':
             user_prompt_style=args.user_prompt_file.split('/')[-1].split('.')[0]
             # val_data_1.save_to_disk(f'{args.data_dir}_{user_prompt_style}')

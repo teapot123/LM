@@ -107,8 +107,12 @@ def main(
                     top_k=top_k,
                     repetition_penalty=repetition_penalty,
                     length_penalty=length_penalty,
+                    output_attentions=True,
                     **kwargs
                 )
+                print(outputs)
+                print('--------')
+                print(outputs[0])
                 for output in outputs:
                     output_text = tokenizer.decode(output, skip_special_tokens=True)
                     print(f"{output_text}\n")

@@ -12,7 +12,7 @@ G3: <3rd most likely guess, as short as possible; not a complete sentence, just 
 
 P4: <the probability between 0.0 and 1.0 that G3 is correct, without any extra commentary whatsoever; just the probability!>
 
-G4: <2nd most likely guess, as short as possible; not a complete sentence, just the guess!>
+G4: <4th most likely guess, as short as possible; not a complete sentence, just the guess!>
 
 P4: <the probability between 0.0 and 1.0 that G4 is correct, without any extra commentary whatsoever; just the probability!>
 
