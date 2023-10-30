@@ -54,14 +54,14 @@ def read_res_file(filename, first_num):
                 for t in tmp[1:]:
                     if len(t.strip()) == 0:
                         continue
-                    if f'G{ind}' in t:
-                        tok = f'G{ind}:'
+                    if f'G{ind}: ' in t:
+                        tok = f'G{ind}: '
                         answer = t.split(tok)[1]
-                        next_tok = f'P{ind}:'
+                        next_tok = f'P{ind}: '
                         answer = answer.split(next_tok)[0].strip().split('(')[0].strip()    
-                    if f'P{ind}' in t:
-                        tok = f'P{ind}:'
-                        next_tok = f'G{ind+1}:'
+                    if f'P{ind}: ' in t:
+                        tok = f'P{ind}: '
+                        next_tok = f'G{ind+1}: '
                         conf = t.split(tok)[1]
                         conf = conf.split(next_tok)[0].strip().split('(')[0].split(')')[0].strip()
                         conf = parse_conf(conf)
@@ -70,6 +70,10 @@ def read_res_file(filename, first_num):
                             confs.append(conf)
                             # print(f"answer: {answer} conf: {conf}")
                         ind += 1
+                print(f"conf: {confs}")
+                sum_conf = sum(confs)
+                confs = [x/sum_conf for x in confs]
+                print(f"conf: {confs}")
             if answers != []:
                 res_dict[question] = [answers, confs]
             else:
@@ -98,7 +102,7 @@ def eval_word_match(res_data, gt_data, bin_num):
             res_question = [x for x in res_data if question in x]
             res_question = list(set(res_question))
             if len(res_question) == 0:
-                print(f'question not in results: {question}')
+                # print(f'question not in results: {question}')
                 continue
             else:
                 answers, confs = res_data[res_question[0]] 
