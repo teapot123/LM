@@ -15,6 +15,6 @@ SBATCH --mail-type=BEGIN          # Type of email notification- BEGIN,END,FAIL,A
 SBATCH --mail-user=jiaxinh3@illinois.com  # Email to which notifications will be sent
 
 # After requested resources are allocated, run your program (for example in a docker container)
-srun nvidia-docker run -v /home/jhuang6:/home/jhuang6 deep_learning python torchrun --nnodes 1 --nproc_per_node 4  examples/finetuning.py --enable_fsdp --use_peft --peft_method lora --model_name meta-llama/Llama-2-7b-chat-hf --fsdp_config.pure_bf16 --output_dir output/test_model
+srun nvidia-docker run -v /home/bcaq:/home/bcaq deep_learning python torchrun --nnodes 1 --nproc_per_node 4  examples/finetuning.py --enable_fsdp --use_peft --peft_method lora --model_name meta-llama/Llama-2-7b-chat-hf --fsdp_config.pure_bf16 --output_dir output/test_model
 
 
