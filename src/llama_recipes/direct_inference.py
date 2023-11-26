@@ -10,12 +10,11 @@ import sys
 import torch
 from transformers import LlamaForCausalLM, LlamaConfig, LlamaTokenizer
 from tqdm import tqdm
-import numpy as np
 
 from llama_recipes.inference.chat_utils import read_dialogs_from_file, format_tokens, create_batches
 from llama_recipes.inference.model_utils import load_model, load_peft_model
 from llama_recipes.inference.safety_utils import get_safety_checker
-from llama_recipes.datasets import get_triviaqa_dataset_for_prediction, get_second_question_for_prediction, get_triviaqa_dataset_for_prediction_with_conf
+from llama_recipes.datasets import get_triviaqa_dataset_for_prediction
 from llama_recipes.configs import datasets
 
 
@@ -78,8 +77,8 @@ def analyze_attention(outputs, tokenizer, questions, answers):
         # attentions = attentions[:, :, prompt_end_index + 1:]
         # print(f'attentions size: {attentions.size()}')
 
-        max_head_att = torch.mean(attentions, dim=1)
-        max_layer_max_head_att = torch.mean(max_head_att, dim=0)
+        max_head_att = torch.max(attentions, dim=1).values
+        max_layer_max_head_att = torch.max(max_head_att, dim=0).values
         assert len(max_layer_max_head_att) == answer_start_index - 1, f"head_att: {len(max_layer_max_head_att)} != answer_start_index {answer_start_index-1}"
 
         batch_attentions.append(max_layer_max_head_att)
@@ -94,16 +93,12 @@ def main(
     batch_size: int=4,
     max_new_tokens =256, #The maximum numbers of tokens to generate
     min_new_tokens:int=0, #The minimum numbers of tokens to generate
-    partition: str='validation',
     prompt_file: str=None,
-    read_data_func: str='get_triviaqa_dataset_for_prediction',
     output_file: str=None,
     att_file: str=None,
-    logits_file: str=None,
     use_chat_mode: bool=False,
     infer_mode: str='topk',
     print_attention: bool=False,
-    print_logits: bool=False,
     seed: int=42, #seed value for reproducibility
     safety_score_threshold: float=0.5,
     do_sample: bool=False, #Whether or not to use sampling ; use greedy decoding otherwise.
@@ -168,19 +163,10 @@ def main(
     )
     if use_chat_mode:
         chats = format_tokens(dialogs, tokenizer)
-    elif read_data_func == 'get_second_question_for_prediction':
-        dataset_config = {k:v for k, v in inspect.getmembers(datasets)}['triviaqa_dataset_reorder']()
-        train_data = get_second_question_for_prediction(dataset_config, tokenizer, partition)
-        chats = train_data['input_ids']
-    elif read_data_func == 'get_triviaqa_dataset_for_prediction':
-        dataset_config = {k:v for k, v in inspect.getmembers(datasets)}['triviaqa_dataset']()
-        train_data = get_triviaqa_dataset_for_prediction(dataset_config, tokenizer, partition)
-        chats = train_data['input_ids']
     else:
         dataset_config = {k:v for k, v in inspect.getmembers(datasets)}['triviaqa_dataset']()
-        train_data = get_triviaqa_dataset_for_prediction_with_conf(dataset_config, tokenizer, partition)
+        train_data = get_triviaqa_dataset_for_prediction(dataset_config, tokenizer, 'validation')
         chats = train_data['input_ids']
-        
 
     chat_batches, attention_masks = create_batches(chats, batch_size=batch_size)
 
@@ -188,8 +174,6 @@ def main(
         with torch.no_grad():
             if print_attention:
                 f_att = open(att_file, 'w')
-            elif print_logits:
-                f_logits = open(logits_file, 'w')
             for idx, chat in tqdm(enumerate(chat_batches), total=len(chat_batches)):
                 attention_mask = attention_masks[idx]
                 tokens= torch.tensor(chat).long()
@@ -206,8 +190,7 @@ def main(
                     top_k=top_k,
                     repetition_penalty=repetition_penalty,
                     length_penalty=length_penalty,
-                    output_attentions=print_attention,
-                    output_scores=print_logits,
+                    output_attentions=True,
                     return_dict_in_generate=True,
                     **kwargs
                 )
@@ -228,22 +211,6 @@ def main(
                                 continue
                             f_att.write(f"{tokenizer.decode(token_id[j])} ({attention[j]:.3f}) ")
                         f_att.write(answers[i]+'\n')
-                elif print_logits:
-                    transition_scores = model.compute_transition_scores(outputs.sequences, outputs.scores, normalize_logits=True)
-                    generated_tokens = outputs.sequences
-                    for i, output_score in enumerate(generated_tokens):
-                        output_score = np.exp(transition_scores[i].detach().cpu().numpy())
-                        token_id = generated_tokens[i]
-                        output_offset = len(token_id) - len(output_score)
-                        for j in range(len(token_id)):
-                            # print(f"token_id {token_id}")
-                            if tokenizer.decode(token_id[j]) == '<unk>':
-                                continue
-                            if j >= output_offset:
-                                f_logits.write(f"{tokenizer.decode(token_id[j])} ({output_score[j-output_offset]:.3f}) ")
-                            else:
-                                f_logits.write(f"{tokenizer.decode(token_id[j])} ")
-                        f_logits.write(answers[i]+'\n')
                         
 
 if __name__ == "__main__":

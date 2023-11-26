@@ -24,8 +24,23 @@ class alpaca_dataset:
     train_split: str = "train"
     test_split: str = "val"
     data_path: str = "src/llama_recipes/datasets/alpaca_data.json"
-    
-    
+
+@dataclass
+class triviaqa_dataset:
+    dataset: str = "triviaqa_dataset"
+    train_split: str = "train"
+    test_split: str = "val"
+    data_path: str = "/shared/data2/jiaxinh3/Calibration/LM/data/trivia_qa"
+    user_prompt_path: str = "/shared/data2/jiaxinh3/Calibration/LM/data/prompts/direct_answer.txt"
+
+@dataclass
+class triviaqa_dataset_reorder:
+    dataset: str = "triviaqa_dataset_reorder"
+    train_split: str = "train"
+    test_split: str = "val"
+    data_path: str = "/shared/data2/jiaxinh3/Calibration/LM/generated/trivia_qa"
+
+
 @dataclass
 class custom_dataset:
     dataset: str = "custom_dataset"

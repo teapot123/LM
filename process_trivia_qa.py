@@ -65,7 +65,8 @@ if __name__=="__main__":
             + [answer['normalized_value']]
             for answer in batch["answer"]]
         answers = [list(set(answer)) for answer in answers]
-        batch['answer'] = answers
+        batch['answers'] = answers
+        batch['answer'] = [answer["value"] for answer in batch["answer"]]
         return batch
 
     
@@ -109,7 +110,7 @@ if __name__=="__main__":
                                 batched=True,
                                 batch_size=batch_size,
                                 remove_columns=["search_results", "question_source", "entity_pages"])
-        val_data.save_to_disk(f'../data/trivia_qa/{args.data_split}_{args.select_data_num}')
+        val_data.save_to_disk(f'../../../data/trivia_qa/{args.data_split}_{args.select_data_num}')
     else:
         if args.mode == 'pure':
             user_prompt_style='pure_q'

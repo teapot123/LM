@@ -132,7 +132,7 @@ def main(**kwargs):
         peft_config = generate_peft_config(train_config, kwargs)
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
-
+    
     #setting up FSDP if enable_fsdp is enabled
     if train_config.enable_fsdp:
         if not train_config.use_peft and train_config.freeze_layers:
@@ -150,6 +150,7 @@ def main(**kwargs):
             sharding_strategy=fsdp_config.sharding_strategy,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,
+            use_orig_params=True,
             sync_module_states=train_config.low_cpu_fsdp,
             param_init_fn=lambda module: module.to_empty(device=torch.device("cuda"), recurse=False)
             if train_config.low_cpu_fsdp and rank != 0 else None,
@@ -158,6 +159,18 @@ def main(**kwargs):
             apply_fsdp_checkpointing(model)
     elif not train_config.quantization and not train_config.enable_fsdp:
         model.to("cuda")
+    
+
+    if train_config.fix_mlp:
+        print('------Fix MLP Layers------')
+        for name, param in model.named_parameters():
+            # print(name)
+            if "mlp" in name:
+                param.requires_grad = False
+                if 'up_proj' in name and '29' in name:
+                    initial_weights = param.clone()
+                    print('---record mlp weight before finetuning')
+
 
     dataset_config = generate_dataset_config(train_config, kwargs)
 
@@ -240,6 +253,13 @@ def main(**kwargs):
     )
     if not train_config.enable_fsdp or rank==0:
         [print(f'Key: {k}, Value: {v}') for k, v in results.items()]
+
+    if train_config.fix_mlp:
+        print('------Check if MLP changed------')
+        for name, param in model.named_parameters():
+            if 'mlp' in name and 'up_proj' in name and '29' in name:
+                assert torch.allclose(initial_weights, param), f"{name} has changed after fine-tuning!"
+                print('MLP layer remains the same!')
 
 if __name__ == "__main__":
     fire.Fire(main)
