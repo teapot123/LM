@@ -15,7 +15,7 @@ python examples/chat_completion/chat_completion.py --model_name meta-llama/Llama
 	--batch_size 8 --do_sample False \
 	--output_file generated/trivia_qa/top1_pretrained13b_w_conf.txt \
 	--print_logits --logits_file generated/trivia_qa/top1_pretrained13b_w_conf_logits.txt \
-	--read_data_func get_triviaqa_dataset_for_prediction \
+	--read_data_func get_triviaqa_dataset_for_prediction_with_conf \
 
 
 
