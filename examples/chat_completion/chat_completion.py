@@ -235,14 +235,15 @@ def main(
                         output_score = np.exp(transition_scores[i].detach().cpu().numpy())
                         token_id = generated_tokens[i]
                         output_offset = len(token_id) - len(output_score)
+                        f_logits.write(f"{questions[i]}\t")
                         for j in range(len(token_id)):
                             # print(f"token_id {token_id}")
                             if tokenizer.decode(token_id[j]) == '<unk>':
                                 continue
                             if j >= output_offset:
                                 f_logits.write(f"{tokenizer.decode(token_id[j])} ({output_score[j-output_offset]:.3f}) ")
-                            else:
-                                f_logits.write(f"{tokenizer.decode(token_id[j])} ")
+                            # else:
+                            #     f_logits.write(f"{tokenizer.decode(token_id[j])} ")
                         f_logits.write(answers[i]+'\n')
                         
 

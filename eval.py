@@ -1,128 +1,9 @@
 import argparse
 import datasets
-import sklearn
+from sklearn.metrics import roc_auc_score
 import random
 
-def parse_conf(conf):
-    try:
-        conf = conf.replace('(', '').replace(')', '').replace(',','')
-        if ' ' in conf:
-            conf = conf.split(' ')[0]
-        if conf[-1] == '.':
-            conf = conf[:-1]
-        if conf[-1] == '%':
-            conf = conf[:-1] + '/100'
-        conf = eval(conf)
-    except SyntaxError:
-        print(f"Cannot parse confidence: {conf}")
-        return None
-    except IndexError:
-        print(f"Cannot parse confidence: {conf}")
-        return None
-    except NameError:
-        print(f"Cannot parse confidence: {conf}")
-        return None
-    except TypeError:
-        print(f"Cannot parse confidence: {conf}")
-        return None
-    return conf
-
-def read_res_file(filename, first_num, guess_num, read_conf):
-    res_dict = {}
-    with open(filename) as f:
-        for i, line in enumerate(f):
-            if first_num != None and i >= first_num:
-                continue
-            tmp = line.strip().split('\t')
-            answers = []
-            confs = []
-            if guess_num == 1 and not read_conf:
-                confs.append(1)
-                if len(tmp) == 1:
-                    print(line)
-                    try:
-                        answer = ' '.join(line.split('?')[1].split(' ')[1:]).strip()
-                        question = line.split(answer)[0].strip()
-                    except IndexError:
-                        continue
-                    except ValueError:
-                        continue
-                else:
-                    question = tmp[0].strip()
-                    for t in tmp[1:]:
-                        if len(t.strip()) == 0:
-                            continue
-                        if 'Guess:' in t:
-                            answer = t.split('Guess:')[1].strip()
-                        elif ':' in t:
-                            answer = t.split(':')[1].strip()
-                        else:
-                            answer = t.strip()
-                        break
-                if 'The question is: ' in question:
-                    question = question.split('The question is: ')[1].strip()
-                if '</s>' in answer:
-                    answer = answer.split('</s>')[0]
-                answer = answer.replace('<', '').replace('>', '')
-                answers.append(answer)
-                # print(question)
-                # print(answers)
-            elif guess_num == 1 and read_conf:
-                question = tmp[0].strip()
-                for t in tmp[1:]:
-                    if len(t.strip()) == 0:
-                        continue
-                    if 'Guess:' in t:
-                        answer = t.split('Guess:')[1].strip()
-                    elif 'Probability:' in t:
-                        conf = t.split('Probability:')[1].strip()
-                conf = parse_conf(conf)
-                if conf != None:
-                    answers.append(answer)
-                    confs.append(conf)
-            else:
-                ind = 1
-                question = tmp[0].strip()
-                # print('\t'.join(tmp[1:]))
-                for t in tmp[1:]:
-                    if len(t.strip()) == 0:
-                        continue
-                    if f'G{ind}: ' in t:
-                        tok = f'G{ind}: '
-                        answer = t.split(tok)[1]
-                        next_tok = f'P{ind}: '
-                        answer = answer.split(next_tok)[0].strip().split('(')[0].strip()    
-                    if f'P{ind}: ' in t:
-                        tok = f'P{ind}: '
-                        next_tok = f'G{ind+1}: '
-                        conf = t.split(tok)[1]
-                        conf = conf.split(next_tok)[0].strip().split('(')[0].split(')')[0].strip()
-                        conf = parse_conf(conf)
-                        if conf != None:
-                            answers.append(answer)
-                            confs.append(conf)
-                            # print(f"answer: {answer} conf: {conf}")
-                        ind += 1
-                print(f"conf: {confs}")
-                sum_conf = sum(confs)
-                confs = [x/sum_conf for x in confs]
-                print(f"conf: {confs}")
-            if answers != []:
-                res_dict[question] = [answers, confs]
-            else:
-                continue
-
-    return res_dict
-
-def read_dataset(filename):
-    val_data = datasets.load_from_disk(filename)
-    gt_dict = {}
-    for data in val_data:
-        # if data['question'] in gt_dict:
-        #     question = data['question']
-        #     print(f'repeat questions: {question}')
-        gt_dict[data['question']] = data['answers']
-    return gt_dict
+from data_utils import read_res_file, read_dataset
 
 def eval_word_match(res_data, gt_data, bin_num, read_conf):
     res_dict = {}
@@ -148,15 +29,15 @@ def eval_word_match(res_data, gt_data, bin_num, read_conf):
             # exact word match
             gt_list = list(set([g.lower() for g in gt]))
             res_dict[question] = {}
-            print(f'Question: {question}')
+            # print(f'Question: {question}')
             if res.lower() in gt_list:
                 res_dict[question]['correct'] = 1
-                print(f'Correct answer: {res} ')
+                # print(f'Correct answer: {res} ')
             else:
                 res_dict[question]['correct'] = 0
                 # print(f'Question: {question}')
-                print(f'Incorrect answer: {res} ')
-            res_dict[question]['conf'] = conf + random.uniform(-1e3,1e3)
+                # print(f'Incorrect answer: {res} ')
+            res_dict[question]['conf'] = conf + random.uniform(-1e-3,1e-3)
             break
 
     total = len(res_dict)
@@ -183,7 +64,7 @@ def eval_word_match(res_data, gt_data, bin_num, read_conf):
         res_dict_items = res_dict.items()
         y_true = [x[1]['correct'] for x in res_dict_items]
         y_score = [x[1]['conf'] for x in res_dict_items]
-        auroc = sklearn.metrics.roc_auc_score(y_true, y_score)
+        auroc = roc_auc_score(y_true, y_score)
 
         
     
@@ -224,16 +105,15 @@ def eval_word_match_multiple_answer(res_data, gt_data, question_match_file):
         gt_list = list(set([g.lower() for g in gt]))
         if len(res_question) > 0:
             answer0, conf0 = res_data[res_question[0]]
-            print(f'Original Question: {res_question[0]}')
+            # print(f'Original Question: {res_question[0]}')
             res_dict[question] = {'orig':0,}
             res = answer0[0]
             if res.lower() in gt_list:
                 res_dict[question]['orig'] = 1
-                print(f'Correct answer: {res} ')
+                # print(f'Correct answer: {res} ')
             else:
                 res_dict[question]['orig'] = 0
-                # print(f'Question: {question}')
-                print(f'Incorrect answer: {res} ')
+                # print(f'Incorrect answer: {res} ')
         # else:
         #     print(f'no original question: {question}')
         #     continue
