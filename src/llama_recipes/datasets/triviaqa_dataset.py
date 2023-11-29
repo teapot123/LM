@@ -10,6 +10,10 @@ from torch.utils.data import Dataset
 import datasets
 from llama_recipes.inference.chat_utils import format_tokens
 
+B_INST, E_INST = "[INST]", "[/INST]"
+B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+system_prompt="You are an intelligent, honest, and harmless assistant. Your direct, concise responses contain only the minimum words needed to convey the answer."
+
 
 user_prompt = """Provide your best guess that it is correct for the following question. Give ONLY the guess, no other words or explanation. For example:
 
@@ -62,7 +66,8 @@ def get_triviaqa_dataset_for_prediction(dataset_config, tokenizer, partition):
     #     user_prompt = ''.join(f.readlines())
     def process_data(batch):  
         # save as dialog json
-        prompt = tokenizer.encode(tokenizer.bos_token + user_prompt + batch["question"], add_special_tokens=False)
+        txt = f"{B_INST} {B_SYS}{system_prompt}{E_SYS}{user_prompt+batch['question']} {E_INST}"
+        prompt = tokenizer.encode(tokenizer.bos_token + txt, add_special_tokens=False)
         sample = {
             "input_ids": prompt,
             "answers": batch["answers"]
@@ -86,7 +91,8 @@ def get_triviaqa_dataset_for_prediction_with_conf(dataset_config, tokenizer, par
     #     user_prompt = ''.join(f.readlines())
     def process_data(batch):  
         # save as dialog json
-        prompt = tokenizer.encode(tokenizer.bos_token + user_prompt_with_conf + batch["question"], add_special_tokens=False)
+        txt = f"{B_INST} {B_SYS}{system_prompt}{E_SYS}{user_prompt_with_conf+batch['question']} {E_INST}"
+        prompt = tokenizer.encode(tokenizer.bos_token + txt, add_special_tokens=False)
         sample = {
             "input_ids": prompt,
             "answers": batch["answers"]

@@ -1,7 +1,7 @@
 # TEMP=0.3
 
 python eval.py --dataset trivia_qa \
-    --res_file generated/trivia_qa/top1_pretrained13b_w_conf.txt \
+    --res_file generated/trivia_qa/top1_pretrained7b_w_conf.txt \
     --bin 10 --guess_num 1 --conf True
 
 # use matched questions

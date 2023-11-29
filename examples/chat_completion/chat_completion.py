@@ -29,7 +29,7 @@ def extract_question_answer(outputs, tokenizer, infer_mode, use_chat_mode):
     for response in generated_tokens:
         output_text = tokenizer.decode(response)
         if infer_mode == 'topk':
-            if use_chat_mode:
+            if use_chat_mode or "[/INST]" in output_text:
                 question = output_text.split('[/INST]')[0].split('The question is:')[1].strip()
                 answer_conf = output_text.split('[/INST]')[1]
                 answer = answer_conf.replace('\n', '\t').strip()
@@ -235,16 +235,16 @@ def main(
                         output_score = np.exp(transition_scores[i].detach().cpu().numpy())
                         token_id = generated_tokens[i]
                         output_offset = len(token_id) - len(output_score)
-                        f_logits.write(f"{questions[i]}\t")
+                        f_logits.write(f"{questions[i]}|||{answers[i]}|||")
                         for j in range(len(token_id)):
                             # print(f"token_id {token_id}")
                             if tokenizer.decode(token_id[j]) == '<unk>':
                                 continue
                             if j >= output_offset:
-                                f_logits.write(f"{tokenizer.decode(token_id[j])} ({output_score[j-output_offset]:.3f}) ")
+                                f_logits.write(f"{tokenizer.decode(token_id[j])} ({output_score[j-output_offset]:.3f})\t")
                             # else:
                             #     f_logits.write(f"{tokenizer.decode(token_id[j])} ")
-                        f_logits.write(answers[i]+'\n')
+                        f_logits.write('\n')
                         
 
 if __name__ == "__main__":
