@@ -1,5 +1,7 @@
 import argparse
 import datasets
+import sklearn
+import random
 
 def parse_conf(conf):
     try:
@@ -154,7 +156,7 @@ def eval_word_match(res_data, gt_data, bin_num, read_conf):
                 res_dict[question]['correct'] = 0
                 # print(f'Question: {question}')
                 print(f'Incorrect answer: {res} ')
-            res_dict[question]['conf'] = conf
+            res_dict[question]['conf'] = conf + random.uniform(-1e3,1e3)
             break
 
     total = len(res_dict)
@@ -177,11 +179,18 @@ def eval_word_match(res_data, gt_data, bin_num, read_conf):
             print(f"start: {start_index} {bin_list[0][1]['conf']} end: {end_index} {bin_list[-1][1]['conf']}")
             print(f"avg conf: {avg_conf} avg acc: {avg_acc}")
         ece /= total
+        auroc = 0
+        res_dict_items = res_dict.items()
+        y_true = [x[1]['correct'] for x in res_dict_items]
+        y_score = [x[1]['conf'] for x in res_dict_items]
+        auroc = sklearn.metrics.roc_auc_score(y_true, y_score)
+
+        
     
     print(f'acc: {correct/total} total: {total}')
     # print(f'conf list: {res_dict}')
     if read_conf:
-        print(f'ece: {ece}')
+        print(f'ece: {ece} auroc: {auroc}')
 
 
 def eval_word_match_multiple_answer(res_data, gt_data, question_match_file):

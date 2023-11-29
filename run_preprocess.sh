@@ -2,7 +2,7 @@
 # python process_trivia_qa.py --down_sample True --data_split train --select_data_num 138384
 
 
-# huggingface-cli login --token "$(< ../t.txt)"
+# huggingface-cli login --token "$(< t.txt)"
 
 # topk
 # python process_trivia_qa.py --data_dir ../data/trivia_qa/validation_1000 --user_prompt_file ../data/prompts/rec_1s_top4_2.txt --system_prompt_file ../data/prompts/system_prompt.txt --mode topk
